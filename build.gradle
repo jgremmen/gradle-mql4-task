@@ -1,0 +1,19 @@
+description = "Gradle MQL4 Compile Task"
+
+apply plugin: "groovy"
+
+version = rootProject.file('version.txt').text.trim()
+
+dependencies {
+  compile gradleApi()
+  compile localGroovy()
+}
+
+jar {
+  manifest.attributes["Implementation-Title"] = rootProject.description
+  manifest.attributes["Implementation-Version"] = rootProject.version
+  manifest.attributes["Implementation-Vendor"] = "Jeroen Gremmen"
+  manifest.attributes["Created-By"] =
+      "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
+  manifest.attributes["Build-Time-ISO-8601"] = new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+}
