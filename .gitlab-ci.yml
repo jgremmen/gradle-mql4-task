@@ -1,0 +1,25 @@
+# CI script
+image: java:8-jdk
+
+stages:
+  - build
+
+variables:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+  GRADLE_USER_HOME: ".gradle-cache"
+
+before_script:
+  - chmod +x ./gradlew
+
+cache:
+  paths:
+    - .gradle-cache
+
+build:
+  stage: build
+  script: ./gradlew clean jar
+  artifacts:
+    paths:
+      - ./build/libs/*.jar
+  only:
+    - master
