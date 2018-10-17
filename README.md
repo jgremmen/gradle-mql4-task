@@ -1,5 +1,5 @@
 # Gradle MQL4 Compile Task
-[ ![Download](https://api.bintray.com/packages/riiidadmin/maven/gradle-github-plugin/images/download.svg) ](https://maven.sayayi.de/repository/maven-releases/eu/trading/gradle/gradle-mql4-task/1.0/gradle-mql4-task-1.0.jar)
+[ [Download latest version] ](https://maven.sayayi.de/repository/maven-releases/eu/trading/gradle/gradle-mql4-task/1.0/gradle-mql4-task-1.0.jar)
 
 Grade Task for compiling MetaTrader MQL4 files.
 
