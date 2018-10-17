@@ -2,18 +2,38 @@ description = "Gradle MQL4 Compile Task"
 
 apply plugin: "groovy"
 
+group = 'eu.trading.gradle'
 version = rootProject.file('version.txt').text.trim()
 
 dependencies {
-  compile gradleApi()
-  compile localGroovy()
+    compile gradleApi()
+    compile localGroovy()
+}
+
+def pomConfig = {
+    licenses {
+        license {
+            name "The Apache Software License, Version 2.0"
+            url "http://www.apache.org/licenses/LICENSE-2.0.txt"
+            distribution "repo"
+        }
+    }
+    developers {
+        developer {
+            id "gradleware"
+            name "Jeroen Gremmen"
+            email "jeroen.gremmen@sayayi.de"
+        }
+    }
 }
 
 jar {
-  manifest.attributes["Implementation-Title"] = rootProject.description
-  manifest.attributes["Implementation-Version"] = rootProject.version
-  manifest.attributes["Implementation-Vendor"] = "Jeroen Gremmen"
-  manifest.attributes["Created-By"] =
-      "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
-  manifest.attributes["Build-Time-ISO-8601"] = new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+    manifest.attributes["Implementation-Title"] = rootProject.description
+    manifest.attributes["Implementation-Version"] = rootProject.version
+    manifest.attributes["Implementation-Vendor"] = "Jeroen Gremmen"
+}
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allSource
+    classifier = 'sources'
 }
