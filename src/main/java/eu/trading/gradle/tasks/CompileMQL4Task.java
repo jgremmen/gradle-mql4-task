@@ -295,6 +295,8 @@ public class CompileMQL4Task extends DefaultTask
 
     try {
       text = IOGroovyMethods.getText(Files.newBufferedReader(logFile.toPath(), StandardCharsets.UTF_16LE));
+      if (text.startsWith("?"))
+        text = text.substring(1);
     } catch(final Exception ex) {
       LOGGER.error("failed to read file {}", logFile.getAbsolutePath(), ex);
     }
