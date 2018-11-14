@@ -1,5 +1,5 @@
 # Gradle MQL4 Compile Task
-[ [Download latest version] ](https://maven.sayayi.de/repository/maven-releases/eu/trading/gradle/gradle-mql4-task/1.0/gradle-mql4-task-1.0.jar)
+[ [Download latest version] ](https://maven.sayayi.de/repository/maven-releases/eu/trading/gradle/gradle-mql4-task/0.9.2/gradle-mql4-task-0.9.2.jar)
 
 Grade Task for compiling MetaTrader MQL4 files.
 
@@ -25,13 +25,13 @@ buildscript {
   }
 }
 
-import eu.trading.gradle.CompileMT4Task
+apply plugin: "eu.trading.gradle"
 ```
 
 ### 2. Use Task
 
 ```groovy
-task compileMq4(type: CompileMT4Task) {
+task compileMq4(type: CompileMQL4Task) {
   mql4Dir "${rootProject.projectDir}/MQL4"
   metaeditor "C:\\MT4\\metaeditor.exe"
 }
@@ -40,7 +40,7 @@ task compileMq4(type: CompileMT4Task) {
 ### Supported Properties
 Name | Type | Description
 --- | --- | ---
-mql4Dir | String | *Required.* The MQL4 path. For windows this property must contain a windows path (eg. `C:\Project\MyMQL4`), for unix this property must contain a unix path.
+mql4Dir | File | *Required.* The MQL4 path. For windows this property must contain a windows path (eg. `C:\Project\MyMQL4`), for unix this property must contain a unix path.
 metaeditor | String | *Required.* Full windows path to `metaeditor.exe`.
 includes | String[] | *Optional.* A set of .mq4 files to include for compilation. The includes must be relative to the path specified in `mql4Dir`. Default: `[ "Indicators/*.mq4", "Experts/*.mq4", "Scripts/*.mq4" ]`
 excludes | String[] | *Optional.* A set of .mq4 files to exclude from compilation. The excludes must be relative to the path specified in `mql4Dir`.
