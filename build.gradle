@@ -11,7 +11,7 @@ buildscript {
 
 
 apply plugin: 'java-gradle-plugin'
-apply plugin: 'de.sayayi.gradle.mql4-plugin'
+//apply plugin: 'de.sayayi.gradle.mql4-plugin'
 
 group = 'de.sayayi.gradle.mql4.task'
 version = rootProject.file('version.txt').text.trim()
@@ -50,6 +50,11 @@ jar {
     attributes["Implementation-Version"] = rootProject.version
     attributes["Implementation-Vendor"] = "Jeroen Gremmen"
   }
+
+  from("${projectDir}") {
+    include "LICENSE"
+    into "META-INF"
+  }
 }
 
 
@@ -59,9 +64,10 @@ task sourcesJar(type: Jar) {
 }
 
 
+/*
 mql4 {
   mql4Dir file("D:/project/jfx-mt4/jfx-tm/mt4/template/MQL4")
   metaeditor "D:/project/jfx-mt4/jfx-tm/mt4/template/metaeditor.exe"
   verbose = true
 }
-
+*/
