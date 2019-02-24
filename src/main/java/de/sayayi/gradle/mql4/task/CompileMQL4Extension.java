@@ -39,10 +39,11 @@ public class CompileMQL4Extension
   private File mql4Dir = new File("MQL4");
 
   @Getter
-  private List<String> includes = new ArrayList<>(Arrays.asList("Indicators/*.mq4", "Experts/*.mq4", "Scripts/*.mq4"));
+  private final List<String> includes =
+      new ArrayList<>(Arrays.asList("Indicators/*.mq4", "Experts/*.mq4", "Scripts/*.mq4"));
 
   @Getter
-  private List<String> excludes = new ArrayList<>(Arrays.asList("**/*.mqh"));
+  private final List<String> excludes = new ArrayList<>(Arrays.asList("**/*.mqh"));
 
   @Getter
   private boolean forceRecompile;

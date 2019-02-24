@@ -48,7 +48,7 @@ public final class Mql4Dependency
   @Getter @Setter
   private File parent;
 
-  private Set<Mql4Dependency> dependencies = new HashSet<>();
+  private final Set<Mql4Dependency> dependencies = new HashSet<>();
   private boolean dirty;
 
 
@@ -57,7 +57,7 @@ public final class Mql4Dependency
   }
 
 
-  public static final Mql4Dependency from(File mql4Dir, File mql4File)
+  public static Mql4Dependency from(File mql4Dir, File mql4File)
   {
     // sanity checks
     if (mql4File == null || !mql4File.exists() ||
@@ -65,7 +65,7 @@ public final class Mql4Dependency
         !mql4File.getAbsolutePath().startsWith(mql4Dir.getAbsolutePath()))
       return null;
 
-    Mql4Dependency dependency = new Mql4Dependency(mql4File);
+    final Mql4Dependency dependency = new Mql4Dependency(mql4File);
 
     dependency.parseMql4File(mql4Dir);
 
@@ -96,7 +96,7 @@ public final class Mql4Dependency
   {
     final Set<File> deps = new HashSet<>();
 
-    for(Mql4Dependency dep: dependencies)
+    for(final Mql4Dependency dep: dependencies)
     {
       deps.add(dep.parent);
       deps.addAll(dep.getDependencies());
@@ -126,23 +126,23 @@ public final class Mql4Dependency
 
       while((line = reader.readLine()) != null)
       {
-        int idx = line.indexOf("#include");
+        final int idx = line.indexOf("#include");
         if (idx >= 0)
         {
-          Matcher matcher = INCLUDE_PATTERN.matcher(line.substring(idx + 8));
+          final Matcher matcher = INCLUDE_PATTERN.matcher(line.substring(idx + 8));
 
           if (matcher.matches())
           {
-            File includeFile = new File(mql4Dir, "Include\\" + matcher.group(1));
+            final File includeFile = new File(mql4Dir, "Include\\" + matcher.group(1));
             collectedIncludes.add(includeFile);
           }
         }
       }
-    } catch(Exception ex) {
+    } catch(final Exception ex) {
       LOGGER.error("failed to read file {}", parent.getAbsolutePath(), ex);
     }
 
-    for(File includeFile: collectedIncludes)
+    for(final File includeFile: collectedIncludes)
       if (includeFile.exists())
         dependencies.add(from(mql4Dir, includeFile));
       else

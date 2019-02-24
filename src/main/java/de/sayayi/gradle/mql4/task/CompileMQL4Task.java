@@ -103,7 +103,7 @@ public class CompileMQL4Task extends DefaultTask
     if (!inputs.isIncremental())
       extension.setForceRecompile(true);
 
-    Map<String,Mql4Dependency> mql4Files = getFiles();
+    final Map<String,Mql4Dependency> mql4Files = getFiles();
     logger.debug("selected mql4 files: {}", mql4Files);
 
     inputs.outOfDate(change -> {
@@ -257,7 +257,7 @@ public class CompileMQL4Task extends DefaultTask
 
   protected String readLogfile(File logFile)
   {
-    StringBuilder text = new StringBuilder();
+    final StringBuilder text = new StringBuilder();
 
     try(BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(logFile), StandardCharsets.UTF_16LE))) {
       boolean start = true;
@@ -279,7 +279,7 @@ public class CompileMQL4Task extends DefaultTask
         text.append("|  ").append(line).append('\n');
         start = false;
       }
-    } catch(Exception ex) {
+    } catch(final Exception ex) {
       getLogger().error("failed to read log file {}", logFile.getAbsolutePath(), ex);
     }
 

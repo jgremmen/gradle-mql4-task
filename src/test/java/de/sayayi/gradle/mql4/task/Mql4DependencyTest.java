@@ -1,6 +1,10 @@
 package de.sayayi.gradle.mql4.task;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.util.Set;
@@ -20,6 +24,10 @@ public class Mql4DependencyTest
   private static final File TEST2_MQ4 = new File(MQL4_1_DIR, "Indicators/Test2.mq4");
   private static final File TEST3_MQ4 = new File(MQL4_1_DIR, "Indicators/Test3.mq4");
 
+  private static final File INC1_MQH = new File(MQL4_1_DIR, "Include/Inc1.mqh");
+  private static final File INC2_MQH = new File(MQL4_1_DIR, "Include/Inc2.mqh");
+  private static final File INC3_MQH = new File(MQL4_1_DIR, "Include/Inc3.mqh");
+
 
   @Test
   public void testFrom0()
@@ -35,48 +43,48 @@ public class Mql4DependencyTest
   @Test
   public void testFrom1()
   {
-    Mql4Dependency dep1 = Mql4Dependency.from(MQL4_1_DIR, TEST1_MQ4);
+    final Mql4Dependency dep1 = Mql4Dependency.from(MQL4_1_DIR, TEST1_MQ4);
 
     assertNotNull(dep1);
     assertFalse(dep1.isDirty());
     assertTrue(dep1.isSelf(TEST1_MQ4));
 
-    Set<File> deps = dep1.getDependencies();
+    final Set<File> deps = dep1.getDependencies();
     assertEquals(2, deps.size());
-    assertTrue(deps.contains(new File(MQL4_1_DIR, "Include/Inc1.mqh")));
-    assertTrue(deps.contains(new File(MQL4_1_DIR, "Include/Inc2.mqh")));
+    assertTrue(deps.contains(INC1_MQH));
+    assertTrue(deps.contains(INC2_MQH));
   }
 
 
   @Test
   public void testFrom2()
   {
-    Mql4Dependency dep2 = Mql4Dependency.from(MQL4_1_DIR, TEST2_MQ4);
+    final Mql4Dependency dep2 = Mql4Dependency.from(MQL4_1_DIR, TEST2_MQ4);
 
     assertNotNull(dep2);
     assertFalse(dep2.isDirty());
     assertTrue(dep2.isSelf(TEST2_MQ4));
 
-    Set<File> deps = dep2.getDependencies();
+    final Set<File> deps = dep2.getDependencies();
     assertEquals(3, deps.size());
-    assertTrue(deps.contains(new File(MQL4_1_DIR, "Include/Inc1.mqh")));
-    assertTrue(deps.contains(new File(MQL4_1_DIR, "Include/Inc2.mqh")));
-    assertTrue(deps.contains(new File(MQL4_1_DIR, "Include/Inc3.mqh")));
+    assertTrue(deps.contains(INC1_MQH));
+    assertTrue(deps.contains(INC2_MQH));
+    assertTrue(deps.contains(INC3_MQH));
   }
 
 
   @Test
   public void testFrom3()
   {
-    Mql4Dependency dep3 = Mql4Dependency.from(MQL4_1_DIR, TEST3_MQ4);
+    final Mql4Dependency dep3 = Mql4Dependency.from(MQL4_1_DIR, TEST3_MQ4);
 
     assertNotNull(dep3);
     assertFalse(dep3.isDirty());
     assertTrue(dep3.isSelf(TEST3_MQ4));
 
-    Set<File> deps = dep3.getDependencies();
+    final Set<File> deps = dep3.getDependencies();
     assertEquals(2, deps.size());
-    assertTrue(deps.contains(new File(MQL4_1_DIR, "Include/Inc2.mqh")));
+    assertTrue(deps.contains(INC2_MQH));
     assertTrue(deps.contains(new File(MQL4_1_DIR, "Include/IncUnknown.mqh")));
   }
 
@@ -84,7 +92,7 @@ public class Mql4DependencyTest
   @Test
   public void testMarkDirtySelf()
   {
-    Mql4Dependency dep2 = Mql4Dependency.from(MQL4_1_DIR, TEST2_MQ4);
+    final Mql4Dependency dep2 = Mql4Dependency.from(MQL4_1_DIR, TEST2_MQ4);
     assertFalse(dep2.isDirty());
 
     dep2.markDirty(TEST2_MQ4);
@@ -95,10 +103,10 @@ public class Mql4DependencyTest
   @Test
   public void testMarkDirtyInc2()
   {
-    Mql4Dependency dep2 = Mql4Dependency.from(MQL4_1_DIR, TEST2_MQ4);
+    final Mql4Dependency dep2 = Mql4Dependency.from(MQL4_1_DIR, TEST2_MQ4);
     assertFalse(dep2.isDirty());
 
-    dep2.markDirty(new File(MQL4_1_DIR, "Include/Inc2.mqh"));
+    dep2.markDirty(INC2_MQH);
     assertTrue(dep2.isDirty());
   }
 
@@ -106,7 +114,7 @@ public class Mql4DependencyTest
   @Test
   public void testMarkDirtyUnknown()
   {
-    Mql4Dependency dep3 = Mql4Dependency.from(MQL4_1_DIR, TEST3_MQ4);
+    final Mql4Dependency dep3 = Mql4Dependency.from(MQL4_1_DIR, TEST3_MQ4);
     assertFalse(dep3.isDirty());
 
     dep3.markDirty(new File(MQL4_1_DIR, "Include/IncUnknown.mqh"));
@@ -117,7 +125,7 @@ public class Mql4DependencyTest
   @Test
   public void testMarkDirtyNoDep()
   {
-    Mql4Dependency dep2 = Mql4Dependency.from(MQL4_1_DIR, TEST2_MQ4);
+    final Mql4Dependency dep2 = Mql4Dependency.from(MQL4_1_DIR, TEST2_MQ4);
     assertFalse(dep2.isDirty());
 
     dep2.markDirty(new File(MQL4_1_DIR, "Include/IncUnknown.mqh"));
@@ -128,8 +136,8 @@ public class Mql4DependencyTest
   @Test
   public void testStream()
   {
-    Mql4Dependency dep2 = Mql4Dependency.from(MQL4_1_DIR, TEST2_MQ4);
-    String filenames = dep2.streamDependenciesWithSelf()
+    final Mql4Dependency dep2 = Mql4Dependency.from(MQL4_1_DIR, TEST2_MQ4);
+    final String filenames = dep2.streamDependenciesWithSelf()
         .map(File::getName)
         .sorted()
         .collect(Collectors.joining(","));
