@@ -18,7 +18,6 @@ package de.sayayi.gradle.mql4.task;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashSet;
 import java.util.Set;
@@ -42,7 +41,7 @@ import lombok.ToString;
 public final class Mql4Dependency
 {
   private static final Pattern INCLUDE_PATTERN =
-          Pattern.compile("\\s*[<\"]([a-zA-Z0-9_/\\x5c\\x2e\\x2d]+)[>\"][\\x00-\\xff]*");
+      Pattern.compile("\\s*[<\"]([a-zA-Z0-9_/\\x5c\\x2e\\x2d]+)[>\"][\\x00-\\xff]*");
 
   private static final Logger LOGGER = Logging.getLogger(Mql4Dependency.class);
 
@@ -149,16 +148,5 @@ public final class Mql4Dependency
         dependencies.add(from(mql4Dir, includeFile));
       else
         dependencies.add(new Mql4Dependency(includeFile));
-  }
-
-
-  public static void main(String[] args)
-  {
-    File mql4Dir = new File("D:\\project\\jfx-mt4\\jfx-tm\\mt4\\template\\MQL4");
-    File mql4File = new File("D:\\project\\jfx-mt4\\jfx-tm\\mt4\\template\\MQL4\\Experts\\jfxOrderTracker.mq4");
-
-    Mql4Dependency dep = from(mql4Dir, mql4File);
-    System.out.println(dep);
-    System.out.println(dep.getDependencies().stream().map(File::getAbsolutePath).collect(Collectors.joining("\n")));
   }
 }
