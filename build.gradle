@@ -1,5 +1,4 @@
-description = "Gradle MQL4 Compile Task"
-
+/*
 buildscript {
   repositories {
     jcenter()
@@ -8,12 +7,19 @@ buildscript {
     classpath files("${buildDir}/libs/gradle-mql4-task-1.0.1.jar")
   }
 }
+*/
 
 
-apply plugin: 'java-gradle-plugin'
-//apply plugin: 'de.sayayi.gradle.mql4-plugin'
+plugins {
+  id 'maven-publish'
+  id 'java-gradle-plugin'
+  id 'signing'
+//  id 'de.sayayi.gradle.mql4-plugin'
+}
 
-group = 'de.sayayi.gradle.mql4.task'
+
+description = "Gradle MQL4 Compile Task"
+group = 'de.sayayi.gradle'
 version = rootProject.file('version.txt').text.trim()
 
 sourceCompatibility = 1.8
@@ -59,8 +65,72 @@ jar {
 
 
 task sourcesJar(type: Jar) {
-  from sourceSets.main.allSource
+  from sourceSets.main.allJava
   classifier = 'sources'
+}
+
+
+task javadocJar(type: Jar) {
+  from javadoc
+  classifier = 'javadoc'
+}
+
+
+publishing {
+  repositories {
+    maven {
+/*
+      url = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+      credentials {
+        username = 'xxx'
+        password = 'yyy'
+      }
+*/
+      url = "$buildDir/repo"
+    }
+  }
+
+  publications {
+    maven(MavenPublication) {
+      from components.java
+      artifact sourcesJar
+      artifact javadocJar
+
+      pom {
+        name = project.description
+        description = 'Gradle Task for compiling MetaTrader MQL4 files'
+        url = 'https://github.com/jgremmen/gradle-mql4-task'
+        inceptionYear = '2019'
+
+        licenses {
+          license {
+            name = 'Apache License, Version 2.0'
+            url = 'http://www.apache.org/licenses/LICENSE-2.0'
+            distribution = 'repo'
+          }
+        }
+
+        developers {
+          developer {
+            id = 'jgremmen'
+            name = 'Jeroen Gremmen'
+            email = 'jeroen.gremmen@sayayi.de'
+          }
+        }
+
+        scm {
+          connection = 'scm:git:git://github.com/jgremmen/gradle-mql4-task.git'
+          developerConnection = 'scm:git:git://github.com/jgremmen/gradle-mql4-task.git'
+          url = 'https://github.com/jgremmen/gradle-mql4-task'
+        }
+      }
+    }
+  }
+}
+
+
+signing {
+  sign publishing.publications.maven
 }
 
 
