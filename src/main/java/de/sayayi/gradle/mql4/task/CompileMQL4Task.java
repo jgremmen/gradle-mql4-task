@@ -28,12 +28,10 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.file.FileCollection;
@@ -85,6 +83,7 @@ public class CompileMQL4Task extends DefaultTask
   @InputFiles
   public FileCollection getMql4Files()
   {
+    // return a set of all selected files (mq4) and their dependencies (mqh)
     return getProject().files(getFiles().values()
         .stream()
         .flatMap(Mql4Dependency::streamDependenciesWithSelf)
@@ -228,7 +227,7 @@ public class CompileMQL4Task extends DefaultTask
           ex4File.lastModified() < mq4File.lastModified())
       {
         if (logFile.exists())
-          getLogger().error("{}", readLogfile(logFile, "| "));
+          getLogger().error("{}", readLogfile(logFile));
 
         throw new ExecException("failed to compile " + mql4FileEntry.getKey());
       }
@@ -236,7 +235,7 @@ public class CompileMQL4Task extends DefaultTask
       if (logFile.exists())
       {
         getLogger().log(extension.isVerbose() ? LogLevel.QUIET : LogLevel.DEBUG, "{}",
-            readLogfile(logFile, extension.isVerbose() ? "| " : ""));
+            readLogfile(logFile));
       }
     } finally {
       logFile.delete();
@@ -256,7 +255,7 @@ public class CompileMQL4Task extends DefaultTask
   }
 
 
-  protected String readLogfile(File logFile, String prefix)
+  protected String readLogfile(File logFile)
   {
     StringBuilder text = new StringBuilder();
 
@@ -266,13 +265,18 @@ public class CompileMQL4Task extends DefaultTask
 
       while((line = reader.readLine()) != null)
       {
-        while(start && line.startsWith("\ufeff"))
-          line = line.substring(1);
+        if (start)
+        {
+          // strip BOM
+          if (line.startsWith("\ufeff"))
+            line = line.substring(1);
 
-        if (start && line.trim().length() == 0)
-          continue;
+          // skip empty lines at the beginning of the log file
+          if (line.trim().length() == 0)
+            continue;
+        }
 
-        text.append(prefix).append(line).append('\n');
+        text.append("|  ").append(line).append('\n');
         start = false;
       }
     } catch(Exception ex) {
