@@ -15,9 +15,12 @@
  */
 package de.sayayi.gradle.mql4.task;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -25,6 +28,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -91,8 +95,11 @@ public class CompileMQL4Task extends DefaultTask
   @TaskAction
   public void compileMQL4(IncrementalTaskInputs inputs) throws IOException
   {
+    if (!extension.getMql4Dir().isDirectory())
+      throw new GradleException(extension.getMql4Dir().getAbsolutePath() + " is not a directory");
+
     final Logger logger = getLogger();
-    final LogLevel level = (logger.isDebugEnabled() || extension.isVerbose()) ? LogLevel.QUIET : LogLevel.DEBUG;
+    final LogLevel level = extension.isVerbose() ? LogLevel.QUIET : LogLevel.DEBUG;
 
     if (!inputs.isIncremental())
       extension.setForceRecompile(true);
@@ -109,16 +116,12 @@ public class CompileMQL4Task extends DefaultTask
       replaceExtension(change.getFile(), "ex4").delete();
     });
 
-
-    if (!extension.getMql4Dir().isDirectory())
-      throw new GradleException(extension.getMql4Dir().getAbsolutePath() + " is not a directory");
-
+    final String mql4DirPath = extension.getMql4Dir().getAbsolutePath();
     File tmpBatch = null;
 
     if (extension.isWine())
     {
-      if (extension.isVerbose())
-        logger.log(level, "prepare for wine environment");
+      logger.log(level, "prepare for wine environment");
 
       tmpBatch = File.createTempFile("mql4c-", ".cmd", extension.getMql4Dir());
       tmpBatch.deleteOnExit();
@@ -131,15 +134,17 @@ public class CompileMQL4Task extends DefaultTask
       {
         if (extension.isForceRecompile() || mql4FileEntry.getValue().isDirty())
         {
-          logger.log(level, "compile {} (dependencies {})", mql4FileEntry.getKey(),
-              mql4FileEntry.getValue().getDependencies());
+          logger.log(level, "compile {} (dependencies {})",
+              mql4FileEntry.getKey(),
+              mql4FileEntry.getValue().getDependencies()
+                           .stream()
+                           .map(f -> makeRelative(mql4DirPath, f.getAbsolutePath()))
+                           .collect(Collectors.toList()));
+
           compileFile(mql4FileEntry, tmpBatch);
         }
         else
-        {
-          logger.log(level, "{} is up-to-date; don't compile",
-              replaceExtension(mql4FileEntry.getValue().getParent(), "ex4"));
-        }
+          logger.log(level, "{} is up-to-date", replaceExtension(mql4FileEntry.getKey(), "ex4"));
       }
     } finally {
       if (tmpBatch != null)
@@ -223,13 +228,16 @@ public class CompileMQL4Task extends DefaultTask
           ex4File.lastModified() < mq4File.lastModified())
       {
         if (logFile.exists())
-          getLogger().error("{}\n", readLogfile(logFile));
+          getLogger().error("{}", readLogfile(logFile, "| "));
 
         throw new ExecException("failed to compile " + mql4FileEntry.getKey());
       }
 
       if (logFile.exists())
-        getLogger().log(extension.isVerbose() ? LogLevel.QUIET : LogLevel.DEBUG, "{}\n", readLogfile(logFile));
+      {
+        getLogger().log(extension.isVerbose() ? LogLevel.QUIET : LogLevel.DEBUG, "{}",
+            readLogfile(logFile, extension.isVerbose() ? "| " : ""));
+      }
     } finally {
       logFile.delete();
     }
@@ -248,26 +256,37 @@ public class CompileMQL4Task extends DefaultTask
   }
 
 
-  protected String readLogfile(File logFile)
+  protected String readLogfile(File logFile, String prefix)
   {
-    String text = "";
+    StringBuilder text = new StringBuilder();
 
-    try {
-      text = IOGroovyMethods.getText(Files.newBufferedReader(logFile.toPath(), StandardCharsets.UTF_16LE));
-      while(text.startsWith("?"))
-        text = text.substring(1);
-    } catch(final Exception ex) {
-      getLogger().error("failed to read file {}", logFile.getAbsolutePath(), ex);
+    try(BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(logFile), StandardCharsets.UTF_16LE))) {
+      boolean start = true;
+      String line;
+
+      while((line = reader.readLine()) != null)
+      {
+        while(start && line.startsWith("\ufeff"))
+          line = line.substring(1);
+
+        if (start && line.trim().length() == 0)
+          continue;
+
+        text.append(prefix).append(line).append('\n');
+        start = false;
+      }
+    } catch(Exception ex) {
+      getLogger().error("failed to read log file {}", logFile.getAbsolutePath(), ex);
     }
 
-    return text.trim().replaceAll("(\\r)?\\n", System.lineSeparator());
+    return text.toString();
   }
 
 
   protected String replaceExtension(String filename, String ext)
   {
     final int dotIdx = filename.lastIndexOf('.');
-    return (dotIdx < 0) ? (filename + '.' + ext) : (filename.substring(0,  dotIdx + 1) + ext);
+    return (dotIdx < 0) ? (filename + '.' + ext) : (filename.substring(0, dotIdx + 1) + ext);
   }
 
 
