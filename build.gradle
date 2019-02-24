@@ -1,32 +1,67 @@
 description = "Gradle MQL4 Compile Task"
 
-apply plugin: "java"
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath files("${buildDir}/libs/gradle-mql4-task-1.0.1.jar")
+  }
+}
 
-group = 'eu.trading.gradle'
+
+apply plugin: 'java-gradle-plugin'
+apply plugin: 'de.sayayi.gradle.mql4-plugin'
+
+group = 'de.sayayi.gradle.mql4.task'
 version = rootProject.file('version.txt').text.trim()
 
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+
+repositories {
+  jcenter()
+}
 
 
 dependencies {
-    compile gradleApi()
+  annotationProcessor "org.projectlombok:lombok:1.18.6"
+  compileOnly "org.projectlombok:lombok:1.18.6"
+
+  testImplementation gradleTestKit()
+  testImplementation 'junit:junit:4.12'
+}
+
+
+gradlePlugin {
+  plugins {
+    mql4Plugin {
+      id = 'de.sayayi.gradle.mql4-plugin'
+      implementationClass = 'de.sayayi.gradle.mql4.task.CompileMQL4TaskPlugin'
+    }
+  }
 }
 
 
 jar {
-    manifest.attributes["Implementation-Title"] = rootProject.description
-    manifest.attributes["Implementation-Version"] = rootProject.version
-    manifest.attributes["Implementation-Vendor"] = "Jeroen Gremmen"
+  manifest {
+    attributes["Implementation-Title"] = rootProject.description
+    attributes["Implementation-Version"] = rootProject.version
+    attributes["Implementation-Vendor"] = "Jeroen Gremmen"
+  }
 }
 
 
 task sourcesJar(type: Jar) {
-    from sourceSets.main.allSource
-    classifier = 'sources'
+  from sourceSets.main.allSource
+  classifier = 'sources'
 }
 
 
-wrapper {
-    gradleVersion = '4.10.2'
+mql4 {
+  mql4Dir file("D:/project/jfx-mt4/jfx-tm/mt4/template/MQL4")
+  metaeditor "D:/project/jfx-mt4/jfx-tm/mt4/template/metaeditor.exe"
+  verbose = true
 }
+

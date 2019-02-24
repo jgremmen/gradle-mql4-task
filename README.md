@@ -1,5 +1,4 @@
 # Gradle MQL4 Compile Task
-[ [Download latest version] ](https://maven.sayayi.de/repository/maven-releases/eu/trading/gradle/gradle-mql4-task/0.9.2/gradle-mql4-task-0.9.2.jar)
 
 Grade Task for compiling MetaTrader MQL4 files.
 
@@ -21,11 +20,11 @@ buildscript {
   }
 
   dependencies {
-    classpath "eu.trading.gradle:gradle-mql4-task:X.Y"
+    classpath "de.sayayi.gradle:gradle-mql4-task:1.0.1"
   }
 }
 
-apply plugin: "eu.trading.gradle"
+apply plugin: "de.sayayi.gradle.mql4-plugi"
 ```
 
 ### 2. Use Task
