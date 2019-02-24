@@ -133,7 +133,7 @@ public final class Mql4Dependency
 
           if (matcher.matches())
           {
-            final File includeFile = new File(mql4Dir, "Include\\" + matcher.group(1));
+            final File includeFile = new File(new File(mql4Dir, "Include"), matcher.group(1));
             collectedIncludes.add(includeFile);
           }
         }
