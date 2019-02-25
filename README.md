@@ -4,7 +4,7 @@ Grade Task for compiling MetaTrader MQL4 files.
 
 ## Supported Features
 - Compilation of a single .mq4 or all .mq4 source files found in the MQL4 directory structure
-- Gradle dependency checking
+- Gradle incremental build support
 - Integrate compile logging in gradle build output
 - Wine support which allows for compilation on non-windows platforms
 
@@ -12,14 +12,23 @@ Grade Task for compiling MetaTrader MQL4 files.
 
 ### 1. Include Task
 
-Edit your `build.gradle`file and add a `buildscript` section. Something like this:
+Edit your `build.gradle` file and add :
+
+```groovy
+plugins {
+  id "de.sayayi.gradle.mql4-plugin" version "1.0.1"
+}
+```
+
+Or as part of your `buildscript` section:
 
 ```groovy
 buildscript {
   repositories {
-    maven { url ... }
+    maven {
+      url "https://plugins.gradle.org/m2/"
+    }
   }
-
   dependencies {
     classpath "de.sayayi.gradle:gradle-mql4-task:1.0.1"
   }
