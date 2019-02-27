@@ -17,6 +17,7 @@ package de.sayayi.gradle.mql4.task;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.plugins.BasePlugin;
 
 
@@ -25,14 +26,15 @@ import org.gradle.api.plugins.BasePlugin;
  */
 public class CompileMQL4TaskPlugin implements Plugin<Project>
 {
-  private static final String COMPILE_MQl4_TASK = "compileMql4";
+  static final String MQL4_EXTENSION = "mql4";
+  static final String COMPILE_MQl4_TASK = "compileMql4";
 
 
   @Override
   public void apply(Project project)
   {
     final CompileMQL4Extension extension =
-        project.getExtensions().create("mql4", CompileMQL4Extension.class);
+        project.getExtensions().create(MQL4_EXTENSION, CompileMQL4Extension.class);
 
     project.getTasks().register(COMPILE_MQl4_TASK, CompileMQL4Task.class, compileMql4Task -> {
       compileMql4Task.setDescription("Compiles MQL4 indicator, expert advisor and script files.");
@@ -42,7 +44,9 @@ public class CompileMQL4TaskPlugin implements Plugin<Project>
 
     project.afterEvaluate(prj -> {
       // if base plugin is active then attach compileMql4 task to assemble task
-      prj.getTasks().getByName(BasePlugin.ASSEMBLE_TASK_NAME, assemble -> assemble.dependsOn(COMPILE_MQl4_TASK));
+      final Task assembleTask = prj.getTasks().findByName(BasePlugin.ASSEMBLE_TASK_NAME);
+      if (assembleTask != null)
+        assembleTask.dependsOn(COMPILE_MQl4_TASK);
     });
   }
 }
