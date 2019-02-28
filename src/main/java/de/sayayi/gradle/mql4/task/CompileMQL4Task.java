@@ -15,6 +15,8 @@
  */
 package de.sayayi.gradle.mql4.task;
 
+import static java.nio.charset.StandardCharsets.UTF_16LE;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,12 +24,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -39,7 +42,7 @@ import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
-import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.OutputFiles;
 import org.gradle.api.tasks.SkipWhenEmpty;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
@@ -67,12 +70,6 @@ public class CompileMQL4Task extends DefaultTask
   }
 
 
-  @OutputDirectory
-  public File getMql4Dir() {
-    return extension.getMql4Dir();
-  }
-
-
   @Input
   public String getMetaeditor() {
     return extension.getMetaeditor();
@@ -81,12 +78,23 @@ public class CompileMQL4Task extends DefaultTask
 
   @SkipWhenEmpty
   @InputFiles
-  public FileCollection getMql4Files()
+  public FileCollection getMq4Files()
   {
     // return a set of all selected files (mq4) and their dependencies (mqh)
-    return getProject().files(getFiles().values()
+    return getProject().files(getInputFilesWithDependency().values()
         .stream()
         .flatMap(Mql4Dependency::streamDependenciesWithSelf)
+        .collect(Collectors.toSet()));
+  }
+
+
+  @OutputFiles
+  public FileCollection getEx4Files()
+  {
+    // return a set of all expected files (ex4)
+    return getProject().files(getInputFilesWithDependency().values()
+        .stream()
+        .map(dep -> replaceExtension(dep.getFile(), "ex4"))
         .collect(Collectors.toSet()));
   }
 
@@ -94,16 +102,12 @@ public class CompileMQL4Task extends DefaultTask
   @TaskAction
   public void compileMQL4(IncrementalTaskInputs inputs) throws IOException
   {
-    if (!extension.getMql4Dir().isDirectory())
-      throw new GradleException(extension.getMql4Dir().getAbsolutePath() + " is not a directory");
+    final File mql4dir = extension.getMql4Dir();
+    if (!mql4dir.isDirectory())
+      throw new GradleException(mql4dir.getAbsolutePath() + " is not a directory");
 
     final Logger logger = getLogger();
-    final LogLevel level = extension.isVerbose() ? LogLevel.QUIET : LogLevel.DEBUG;
-
-    if (!inputs.isIncremental())
-      extension.setForceRecompile(true);
-
-    final Map<String,Mql4Dependency> mql4Files = getFiles();
+    final Map<String,Mql4Dependency> mql4Files = getInputFilesWithDependency();
     logger.debug("selected mql4 files: {}", mql4Files);
 
     inputs.outOfDate(change -> {
@@ -115,14 +119,22 @@ public class CompileMQL4Task extends DefaultTask
       replaceExtension(change.getFile(), "ex4").delete();
     });
 
-    final String mql4DirPath = extension.getMql4Dir().getAbsolutePath();
+    final LogLevel level = extension.isVerbose() ? LogLevel.QUIET : LogLevel.DEBUG;
+    compileMQL4(logger, level, mql4Files, mql4dir, inputs.isIncremental());
+  }
+
+
+  private void compileMQL4(Logger logger, LogLevel level, Map<String,Mql4Dependency> mql4Files, File mql4dir,
+      boolean incremental) throws IOException
+  {
+    final String mql4DirPath = mql4dir.getAbsolutePath();
     File tmpBatch = null;
 
-    if (extension.isWine())
+    if (extension.getWine().isEnabled())
     {
       logger.log(level, "prepare for wine environment");
 
-      tmpBatch = File.createTempFile("mql4c-", ".cmd", extension.getMql4Dir());
+      tmpBatch = File.createTempFile("mql4c-", ".cmd", mql4dir);
       tmpBatch.deleteOnExit();
 
       logger.debug("created temporary batch file {}", tmpBatch);
@@ -131,7 +143,7 @@ public class CompileMQL4Task extends DefaultTask
     try {
       for(final Entry<String,Mql4Dependency> mql4FileEntry: mql4Files.entrySet())
       {
-        if (extension.isForceRecompile() || mql4FileEntry.getValue().isDirty())
+        if (!incremental || mql4FileEntry.getValue().isDirty())
         {
           logger.log(level, "compile {} (dependencies {})",
               mql4FileEntry.getKey(),
@@ -155,23 +167,22 @@ public class CompileMQL4Task extends DefaultTask
   }
 
 
-  private Map<String,Mql4Dependency> getFiles()
+  private Map<String,Mql4Dependency> getInputFilesWithDependency()
   {
-    final FileNameFinder finder = new FileNameFinder();
     final Map<String,Mql4Dependency> fileSet = new LinkedHashMap<>();
-    final File mql4Dir = extension.getMql4Dir();
-    final String mql4Path = mql4Dir.getAbsolutePath();
 
     if (!extension.getIncludes().isEmpty())
     {
-      extension.getIncludes().forEach(pattern -> {
-        finder.getFileNames(mql4Path, pattern).forEach(f ->
-            fileSet.put(makeRelative(mql4Path, f), Mql4Dependency.from(mql4Dir, new File(f))));
-      });
+      final Set<String> inputFiles = new TreeSet<>();
 
-      extension.getExcludes().forEach(pattern -> {
-        finder.getFileNames(mql4Path, pattern).forEach(f -> fileSet.remove(makeRelative(mql4Path, f)));
-      });
+      final FileNameFinder finder = new FileNameFinder();
+      final File mql4Dir = extension.getMql4Dir();
+      final String mql4Path = mql4Dir.getAbsolutePath();
+
+      extension.getIncludes().forEach(pattern -> inputFiles.addAll(finder.getFileNames(mql4Path, pattern)));
+      extension.getExcludes().forEach(pattern -> inputFiles.removeAll(finder.getFileNames(mql4Path, pattern)));
+
+      inputFiles.forEach(f -> fileSet.put(makeRelative(mql4Path, f), Mql4Dependency.from(mql4Dir, new File(f))));
     }
 
     return fileSet;
@@ -195,17 +206,24 @@ public class CompileMQL4Task extends DefaultTask
 
   protected void compileFile(Entry<String,Mql4Dependency> mql4FileEntry, File tmpBatch) throws IOException
   {
-    final File mq4File = mql4FileEntry.getValue().getParent();
-    final File ex4File = replaceExtension(mq4File, "ex4");
-    final File logFile = replaceExtension(mq4File, "log");
     final ExecAction execAction = getExecActionFactory().newExecAction();
+    final Wine wine = extension.getWine();
 
-    if (extension.isWine())
+    if (wine.isEnabled())
     {
       createBatchfile(mql4FileEntry.getKey(), tmpBatch);
 
-      execAction.setExecutable("wine");
+      execAction.setExecutable(wine.getExecutable());
       execAction.setArgs(Arrays.asList("cmd", "/c", tmpBatch));
+
+      final Map<String,Object> environment = execAction.getEnvironment();
+
+      // disable debugging messages on the console
+      environment.put("WINEDEBUG", "-all");
+
+      // set custom wine prefix
+      if (wine.getPrefix() != null)
+        environment.put("WINEPREFIX", wine.getPrefix().getAbsolutePath());
     }
     else
     {
@@ -220,9 +238,13 @@ public class CompileMQL4Task extends DefaultTask
     execAction.setIgnoreExitValue(true);
 
     final ExecResult result = execAction.execute();
+    final File mq4File = mql4FileEntry.getValue().getFile();
+    final File logFile = replaceExtension(mq4File, "log");
 
     try {
-      if ((!extension.isWine() && result.getExitValue() != 1) ||
+      final File ex4File = replaceExtension(mq4File, "ex4");
+
+      if ((!wine.isEnabled() && result.getExitValue() != 1) ||
           !ex4File.exists() ||
           ex4File.lastModified() < mq4File.lastModified())
       {
@@ -245,12 +267,12 @@ public class CompileMQL4Task extends DefaultTask
 
   protected void createBatchfile(String relativeMq4Path, File batchFile) throws IOException
   {
-    try(Writer bos = new FileWriter(batchFile)) {
-      bos.append("@ECHO OFF\r\n")
-         .append('"').append(extension.getMetaeditor()).append("\" ")
-         .append("/compile:\"").append(relativeMq4Path.replace("/", "\\")).append("\" ")
-         .append("/log")
-         .append("\r\n");
+    try(Writer batchWriter = new FileWriter(batchFile)) {
+      batchWriter.append("@ECHO OFF\r\n")
+                 .append('"').append(extension.getMetaeditor()).append("\" ")
+                 .append("/compile:\"").append(relativeMq4Path.replace("/", "\\")).append("\" ")
+                 .append("/log")
+                 .append("\r\n");
     }
   }
 
@@ -259,7 +281,7 @@ public class CompileMQL4Task extends DefaultTask
   {
     final StringBuilder text = new StringBuilder();
 
-    try(BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(logFile), StandardCharsets.UTF_16LE))) {
+    try(BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(logFile), UTF_16LE))) {
       boolean start = true;
       String line;
 

@@ -1,7 +1,7 @@
 #property copyright "2019, Jeroen Gremmen"
 #property strict
 
-#include "Inc1.mqh"
+#include <Inc1.mqh>
 #include "Inc3.mqh"
 
 #property indicator_chart_window

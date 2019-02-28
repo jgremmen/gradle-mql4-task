@@ -1,16 +1,16 @@
 package de.sayayi.gradle.mql4.task;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 
 /**
@@ -26,7 +26,7 @@ public class Mql4DependencyTest
 
   private static final File INC1_MQH = new File(MQL4_1_DIR, "Include/Inc1.mqh");
   private static final File INC2_MQH = new File(MQL4_1_DIR, "Include/Inc2.mqh");
-  private static final File INC3_MQH = new File(MQL4_1_DIR, "Include/Inc3.mqh");
+  private static final File INC3_MQH = new File(MQL4_1_DIR, "Indicators/Inc3.mqh");
 
 
   @Test
@@ -85,7 +85,7 @@ public class Mql4DependencyTest
     final Set<File> deps = dep3.getDependencies();
     assertEquals(2, deps.size());
     assertTrue(deps.contains(INC2_MQH));
-    assertTrue(deps.contains(new File(MQL4_1_DIR, "Include/IncUnknown.mqh")));
+    assertTrue(deps.contains(new File(MQL4_1_DIR, "Indicators/IncUnknown.mqh")));
   }
 
 
@@ -117,7 +117,7 @@ public class Mql4DependencyTest
     final Mql4Dependency dep3 = Mql4Dependency.from(MQL4_1_DIR, TEST3_MQ4);
     assertFalse(dep3.isDirty());
 
-    dep3.markDirty(new File(MQL4_1_DIR, "Include/IncUnknown.mqh"));
+    dep3.markDirty(new File(MQL4_1_DIR, "Indicators/IncUnknown.mqh"));
     assertTrue(dep3.isDirty());
   }
 

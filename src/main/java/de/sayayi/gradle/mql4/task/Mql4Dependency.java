@@ -40,20 +40,20 @@ import lombok.ToString;
 public final class Mql4Dependency
 {
   private static final Pattern INCLUDE_PATTERN =
-      Pattern.compile("\\s*[<\"]([a-zA-Z0-9_/\\x5c\\x2e\\x2d]+)[>\"][\\x00-\\xff]*");
+      Pattern.compile("\\s*([<\"])([a-zA-Z0-9_/\\x5c\\x2e\\x2d]+)[>\"][\\x00-\\xff]*");
 
   private static final Logger LOGGER = Logging.getLogger(Mql4Dependency.class);
 
 
   @Getter @Setter
-  private File parent;
+  private File file;
 
   private final Set<Mql4Dependency> dependencies = new HashSet<>();
   private boolean dirty;
 
 
-  private Mql4Dependency(File parent) {
-    this.parent = parent;
+  private Mql4Dependency(File file) {
+    this.file = file;
   }
 
 
@@ -74,7 +74,7 @@ public final class Mql4Dependency
 
 
   public boolean isSelf(File file) {
-    return parent.equals(file);
+    return this.file.equals(file);
   }
 
 
@@ -98,7 +98,7 @@ public final class Mql4Dependency
 
     for(final Mql4Dependency dep: dependencies)
     {
-      deps.add(dep.parent);
+      deps.add(dep.file);
       deps.addAll(dep.getDependencies());
     }
 
@@ -110,7 +110,7 @@ public final class Mql4Dependency
   {
     final Set<File> deps = new HashSet<>();
 
-    deps.add(parent);
+    deps.add(file);
     deps.addAll(getDependencies());
 
     return deps.stream();
@@ -121,7 +121,7 @@ public final class Mql4Dependency
   {
     final Set<File> collectedIncludes = new HashSet<>();
 
-    try(BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(parent), "utf-8"))) {
+    try(BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "utf-8"))) {
       String line;
 
       while((line = reader.readLine()) != null)
@@ -133,13 +133,15 @@ public final class Mql4Dependency
 
           if (matcher.matches())
           {
-            final File includeFile = new File(new File(mql4Dir, "Include"), matcher.group(1));
+            final File includeFile = ("<".equals(matcher.group(1)))
+              ? new File(new File(mql4Dir, "Include"), matcher.group(2))
+              : new File(file.getParentFile(), matcher.group(2));
             collectedIncludes.add(includeFile);
           }
         }
       }
     } catch(final Exception ex) {
-      LOGGER.error("failed to read file {}", parent.getAbsolutePath(), ex);
+      LOGGER.error("failed to read file {}", file.getAbsolutePath(), ex);
     }
 
     for(final File includeFile: collectedIncludes)

@@ -1,20 +1,9 @@
-/*
-buildscript {
-  repositories {
-    jcenter()
-  }
-  dependencies {
-    classpath files("${buildDir}/libs/gradle-mql4-task-1.0.1.jar")
-  }
-}
-*/
-
-
 plugins {
+  id "com.gradle.plugin-publish" version "0.10.1"
   id 'maven-publish'
   id 'java-gradle-plugin'
   id 'signing'
-//  id 'de.sayayi.gradle.mql4-plugin'
+  id "de.undercouch.download" version "3.4.3"
 }
 
 
@@ -33,10 +22,13 @@ repositories {
 
 dependencies {
   annotationProcessor "org.projectlombok:lombok:1.18.6"
+
+  compileOnly gradleApi()
   compileOnly "org.projectlombok:lombok:1.18.6"
 
   testImplementation gradleTestKit()
-  testImplementation 'junit:junit:4.12'
+  testImplementation 'org.junit.jupiter:junit-jupiter:5.4.0'
+  testImplementation 'io.github.glytching:junit-extensions:2.3.0'
 }
 
 
@@ -45,6 +37,20 @@ gradlePlugin {
     mql4Plugin {
       id = 'de.sayayi.gradle.mql4-plugin'
       implementationClass = 'de.sayayi.gradle.mql4.task.CompileMQL4TaskPlugin'
+    }
+  }
+}
+
+
+pluginBundle {
+  website = 'https://github.com/jgremmen/gradle-mql4-task'
+  vcsUrl = 'https://github.com/jgremmen/gradle-mql4-task'
+  description = project.description
+  tags = [ 'mql4', 'mq4', 'metaeditor' ]
+
+  plugins {
+    mql4Plugin {
+      displayName = 'Gradle MQL4 Plugin - compiles MQ4 indicator, expert advisor and script files.'
     }
   }
 }
@@ -64,13 +70,13 @@ jar {
 }
 
 
-task sourcesJar(type: Jar) {
+task packageSources(type: Jar) {
   from sourceSets.main.allJava
   classifier = 'sources'
 }
 
 
-task javadocJar(type: Jar) {
+task packageJavadoc(type: Jar) {
   from javadoc
   classifier = 'javadoc'
 }
@@ -93,12 +99,12 @@ publishing {
   publications {
     maven(MavenPublication) {
       from components.java
-      artifact sourcesJar
-      artifact javadocJar
+      artifact packageSources
+      artifact packageJavadoc
 
       pom {
         name = project.description
-        description = 'Gradle Task for compiling MetaTrader MQL4 files'
+        description = 'Gradle Task for compiling MetaTrader MQ4 files'
         url = 'https://github.com/jgremmen/gradle-mql4-task'
         inceptionYear = '2019'
 
@@ -134,10 +140,36 @@ signing {
 }
 
 
+test {
+  doFirst {
+    download {
+      src 'https://github.com/EA31337/MetaEditor/raw/master/metaeditor.exe'
+      dest buildDir
+      overwrite false
+    }
+
+    systemProperty "MQL4_BASE", sourceSets.test.resources.srcDirs[0]
+    systemProperty "METAEDITOR", "${buildDir}/metaeditor.exe"
+  }
+
+  useJUnitPlatform()
+
+  testLogging {
+    events "passed", "skipped", "failed"
+  }
+}
+
+
 /*
 mql4 {
   mql4Dir file("D:/project/jfx-mt4/jfx-tm/mt4/template/MQL4")
   metaeditor "D:/project/jfx-mt4/jfx-tm/mt4/template/metaeditor.exe"
   verbose = true
+
+  wine {
+    executable = "wine64"
+    systemWideDrive = "w:"
+    enabled = false
+  }
 }
 */

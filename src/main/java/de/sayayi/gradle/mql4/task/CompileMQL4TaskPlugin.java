@@ -15,10 +15,16 @@
  */
 package de.sayayi.gradle.mql4.task;
 
+import static org.gradle.api.plugins.BasePlugin.ASSEMBLE_TASK_NAME;
+import static org.gradle.api.plugins.BasePlugin.BUILD_GROUP;
+import static org.gradle.api.plugins.BasePlugin.CLEAN_TASK_NAME;
+
+import java.io.File;
+
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.Task;
-import org.gradle.api.plugins.BasePlugin;
+import org.gradle.api.tasks.TaskContainer;
+import org.gradle.api.tasks.TaskProvider;
 
 
 /**
@@ -33,20 +39,30 @@ public class CompileMQL4TaskPlugin implements Plugin<Project>
   @Override
   public void apply(Project project)
   {
+    project.getPlugins().apply("base");
+
+    // create mql4 extension
     final CompileMQL4Extension extension =
         project.getExtensions().create(MQL4_EXTENSION, CompileMQL4Extension.class);
 
-    project.getTasks().register(COMPILE_MQl4_TASK, CompileMQL4Task.class, compileMql4Task -> {
-      compileMql4Task.setDescription("Compiles MQL4 indicator, expert advisor and script files.");
-      compileMql4Task.setGroup(BasePlugin.BUILD_GROUP);
-      compileMql4Task.setExtension(extension);
-    });
+    // create compileMql4 task
+    final TaskProvider<CompileMQL4Task> compileMql4Task =
+        project.getTasks().register(COMPILE_MQl4_TASK, CompileMQL4Task.class, task -> {
+          task.setDescription("Compiles MQL4 indicator, expert advisor and script files.");
+          task.setGroup(BUILD_GROUP);
+          task.setExtension(extension);
+        });
 
     project.afterEvaluate(prj -> {
-      // if base plugin is active then attach compileMql4 task to assemble task
-      final Task assembleTask = prj.getTasks().findByName(BasePlugin.ASSEMBLE_TASK_NAME);
-      if (assembleTask != null)
-        assembleTask.dependsOn(COMPILE_MQl4_TASK);
+      final TaskContainer tasks = prj.getTasks();
+
+      // assemble.dependsOn('compileMql4')
+      tasks.findByName(ASSEMBLE_TASK_NAME).dependsOn(compileMql4Task.get());
+
+      // clean.doLast { }
+      tasks.findByName(CLEAN_TASK_NAME).doLast(task -> {
+          compileMql4Task.get().getEx4Files().forEach(File::delete);
+      });
     });
   }
 }

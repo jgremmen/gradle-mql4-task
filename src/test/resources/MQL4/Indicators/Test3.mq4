@@ -1,7 +1,7 @@
 #property copyright "2019, Jeroen Gremmen"
 #property strict
 
-#include "Inc2.mqh"
+#include <Inc2.mqh>
 #include "IncUnknown.mqh"
 #include <>
 

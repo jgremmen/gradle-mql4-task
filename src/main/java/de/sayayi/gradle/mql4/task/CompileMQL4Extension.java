@@ -21,8 +21,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import org.gradle.api.Action;
+
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 
 /**
@@ -30,6 +33,7 @@ import lombok.Setter;
  *
  * @author Jeroen Gremmen
  */
+@ToString
 public class CompileMQL4Extension
 {
   @Getter @Setter
@@ -46,10 +50,7 @@ public class CompileMQL4Extension
   private final List<String> excludes = new ArrayList<>(Arrays.asList("**/*.mqh"));
 
   @Getter
-  private boolean forceRecompile;
-
-  @Getter
-  private boolean wine;
+  private final Wine wine = new Wine();
 
   @Getter
   private boolean verbose;
@@ -103,23 +104,8 @@ public class CompileMQL4Extension
   }
 
 
-  public void setForceRecompile(boolean forceRecompile) {
-    this.forceRecompile = forceRecompile;
-  }
-
-
-  public void setForceRecompile(String forceRecompile) {
-    this.forceRecompile = Boolean.parseBoolean(forceRecompile);
-  }
-
-
-  public void setWine(boolean wine) {
-    this.wine = wine;
-  }
-
-
-  public void setWine(String wine) {
-    this.wine = Boolean.parseBoolean(wine);
+  public void wine(Action<? super Wine> action) {
+    action.execute(wine);
   }
 
 
