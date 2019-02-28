@@ -1,4 +1,4 @@
-# CI script
+# GitLab CI script
 image: java:8-jdk
 
 stages:
@@ -9,16 +9,18 @@ variables:
   GRADLE_USER_HOME: ".gradle-cache"
   JAVA_OPTS: "-Xms1g -Xmx1g"
 
-before_script:
-  - chmod +x ./gradlew
-
-cache:
-  paths:
-    - .gradle-cache
-
 build:
   stage: build
-  script: ./gradlew clean build jar
+  cache:
+    paths:
+      - .gradle-cache
+  before_script:
+    - export WINEPREFIX="`pwd`/.wine"
+    - export WINDEBUG=-all
+    - export WINEARCH=win32
+  script:
+    - chmod +x ./gradlew
+    - ./gradlew clean build jar
   artifacts:
     paths:
       - ./build/libs/*.jar
