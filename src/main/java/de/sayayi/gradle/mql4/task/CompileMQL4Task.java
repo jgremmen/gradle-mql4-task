@@ -216,14 +216,7 @@ public class CompileMQL4Task extends DefaultTask
       execAction.setExecutable(wine.getExecutable());
       execAction.setArgs(Arrays.asList("cmd", "/c", tmpBatch));
 
-      final Map<String,Object> environment = execAction.getEnvironment();
-
-      // disable debugging messages on the console
-      environment.put("WINEDEBUG", "-all");
-
-      // set custom wine prefix
-      if (wine.getPrefix() != null)
-        environment.put("WINEPREFIX", wine.getPrefix().getAbsolutePath());
+      configureWineEnvironment(execAction);
     }
     else
     {
@@ -261,6 +254,27 @@ public class CompileMQL4Task extends DefaultTask
       }
     } finally {
       logFile.delete();
+    }
+  }
+
+
+  protected void configureWineEnvironment(ExecAction execAction)
+  {
+    final Map<String,Object> environment = execAction.getEnvironment();
+
+    // disable debugging messages on the console
+    environment.put("WINEDEBUG", "-all");
+
+    // set custom wine prefix
+    final File winePrefix = extension.getWine().getPrefix();
+    if (winePrefix != null)
+    {
+      environment.put("WINEPREFIX", winePrefix.getAbsolutePath());
+
+      // if the wine prefix is not a directory it will be created the first time wine is started.
+      // make sure wine configures itself as a 32-bit windows architecture
+      if (!winePrefix.isDirectory())
+        environment.put("WINEARCH", "win32");
     }
   }
 

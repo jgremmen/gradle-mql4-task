@@ -16,6 +16,10 @@
 package de.sayayi.gradle.mql4.task;
 
 import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.gradle.api.GradleException;
 import org.gradle.internal.os.OperatingSystem;
@@ -59,8 +63,15 @@ public class Wine
   private String systemWideDrive = "z:";
 
 
-  public Wine() {
+  public Wine()
+  {
+    // enable wine on non-windows architectures
     enabled = !OperatingSystem.current().isWindows();
+
+    // if WINEPREFIX is set in environment, copy it into the configuration
+    final String winePrefix = System.getProperty("WINEPREFIX");
+    if (winePrefix != null && new File(winePrefix).isDirectory())
+      setPrefix(winePrefix);
   }
 
 
@@ -79,8 +90,35 @@ public class Wine
   }
 
 
-  public void setPrefix(String prefix) {
+  public void setPrefix(String prefix)
+  {
     this.prefix = new File(prefix);
+
+    final File dosdevices = new File(this.prefix, "dosdevices");
+
+    if (dosdevices.isDirectory())
+    {
+      // find all drives
+      final File[] drives = dosdevices.listFiles((FileFilter) file -> {
+        final String name = file.getName();
+        return name.length() == 2 && name.charAt(1) == ':' && Files.isSymbolicLink(file.toPath());
+      });
+
+      for(final File drive: drives)
+      {
+        try {
+          final Path link = Files.readSymbolicLink(drive.toPath());
+          if ("/".equals(link.toFile().getAbsolutePath()))
+          {
+            // root symlink
+            systemWideDrive = drive.getName();
+            break;
+          }
+        } catch(final IOException ex) {
+          // ignore
+        }
+      }
+    }
   }
 
 
