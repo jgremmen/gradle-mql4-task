@@ -20,7 +20,7 @@ build:
     - export WINEARCH=win32
   script:
     - chmod +x ./gradlew
-    - ./gradlew clean build jar
+    - ./gradlew clean build jar --info
   artifacts:
     paths:
       - ./build/libs/*.jar
