@@ -62,7 +62,7 @@ public final class Mql4Dependency
     // sanity checks
     if (mql4File == null || !mql4File.exists() ||
         mql4Dir == null || !mql4Dir.isDirectory() ||
-        !mql4File.getAbsolutePath().startsWith(mql4Dir.getAbsolutePath()))
+        !mql4File.toPath().startsWith(mql4Dir.toPath()))
       return null;
 
     final Mql4Dependency dependency = new Mql4Dependency(mql4File);
@@ -74,7 +74,7 @@ public final class Mql4Dependency
 
 
   public boolean isSelf(File file) {
-    return this.file.equals(file);
+    return this.file.toPath().equals(file.toPath());
   }
 
 
