@@ -55,16 +55,13 @@ import io.github.glytching.junit.extension.folder.TemporaryFolderExtension;
 public class CompileMQL4TaskTest
 {
   private static File MQL4_BASE;
-  private static String METAEDITOR;
 
   private TemporaryFolder folder;
 
 
   @BeforeAll
-  public static void prepare()
-  {
+  public static void prepare() {
     MQL4_BASE = new File(System.getProperty("MQL4_BASE"));
-    METAEDITOR = new File(System.getProperty("METAEDITOR")).getAbsolutePath().replace("\\", "\\\\");
   }
 
 
@@ -81,12 +78,12 @@ public class CompileMQL4TaskTest
     final Project project = ProjectBuilder.builder().withProjectDir(folder.getRoot()).build();
 
     project.apply(Collections.<String,Object>singletonMap("plugin", "de.sayayi.gradle.mql4-plugin"));
-    project.getTasks().getByName(CompileMQL4TaskPlugin.COMPILE_MQl4_TASK);
+    project.getTasks().getByName(CompileMQL4TaskPlugin.COMPILE_MQl4_TASK_NAME);
 
     final ExtensionContainer extensions = project.getExtensions();
     final CompileMQL4Extension extension = extensions.getByType(CompileMQL4Extension.class);
 
-    assertEquals(extension, extensions.getByName(CompileMQL4TaskPlugin.MQL4_EXTENSION));
+    assertEquals(extension, extensions.getByName(CompileMQL4TaskPlugin.MQL4_EXTENSION_NAME));
   }
 
 
@@ -106,7 +103,8 @@ public class CompileMQL4TaskTest
         .withDebug(true)
         .withProjectDir(folder.getRoot())
         .withArguments(tasks)
-        .withPluginClasspath();
+        .withPluginClasspath()
+        .withDebug(true);
   }
 
 
@@ -128,8 +126,7 @@ public class CompileMQL4TaskTest
         "mql4 {\n" +
         "  mql4Dir file('MQL4')\n" +
         "  exclude 'Indicators/Test3.mq4'\n" +
-        "  metaeditor \"" + METAEDITOR + "\"\n" +
-        "}\n").build();
+        "}\n").forwardOutput().build();
 
     assertTrue(new File(testDir, "Indicators/Test1.ex4").exists());
     assertTrue(new File(testDir, "Indicators/Test2.ex4").exists());
@@ -154,8 +151,7 @@ public class CompileMQL4TaskTest
         "mql4 {\n" +
         "  mql4Dir file('MQL4')\n" +
         "  exclude 'Indicators/Test3.mq4'\n" +
-        "  metaeditor \"" + METAEDITOR + "\"\n" +
-        "}\n").build();
+        "}\n").forwardOutput().build();
 
     assertTrue(new File(testDir, "Indicators/Test1.ex4").exists());
     assertTrue(new File(testDir, "Indicators/Test2.ex4").exists());

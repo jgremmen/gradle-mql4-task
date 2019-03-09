@@ -23,7 +23,8 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.gradle.api.Action;
-import org.gradle.api.GradleException;
+import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
 
 import lombok.Getter;
 import lombok.ToString;
@@ -39,12 +40,8 @@ public class CompileMQL4Extension
 {
   private static final Pattern DOS_EXECUTABLE = Pattern.compile("^.*\\x2e(exe|bat|cmd)$", Pattern.CASE_INSENSITIVE);
 
-
   @Getter
-  private String metaeditor;
-
-  @Getter
-  private File mql4Dir = new File("MQL4");
+  private final Configuration mql4Configuration;
 
   @Getter
   private final List<String> includes =
@@ -54,27 +51,31 @@ public class CompileMQL4Extension
   private final List<String> excludes = new ArrayList<>(Arrays.asList("**/*.mqh"));
 
   @Getter
-  private final Wine wine = new Wine();
+  private final Wine wine;
+
+  @Getter
+  private String metaeditor;
+
+  @Getter
+  private File mql4Dir = new File("MQL4");
 
   @Getter
   private boolean verbose;
 
 
-  public CompileMQL4Extension()
+  public CompileMQL4Extension(Project project, Configuration mql4Configuration)
   {
+    wine = new Wine(project);
+
+    this.mql4Configuration = mql4Configuration;
+
     // if metaeditor is set in the system properties, copy the location from there.
-    final String metaeditor = System.getProperty("mql4.metaeditor");
-    if (metaeditor != null && DOS_EXECUTABLE.matcher(metaeditor).matches())
-      this.metaeditor = metaeditor;
+    setMetaeditor(System.getProperty("mql4.metaeditor"));
   }
 
 
-  public void setMetaeditor(String metaeditor)
-  {
-    if (metaeditor != null && DOS_EXECUTABLE.matcher(metaeditor).matches())
-      this.metaeditor = metaeditor;
-    else
-      throw new GradleException("mql4.metaeditor is not a windows batch/executable");
+  public void setMetaeditor(String metaeditor) {
+    this.metaeditor = (metaeditor != null && DOS_EXECUTABLE.matcher(metaeditor).matches()) ? metaeditor : null;
   }
 
 

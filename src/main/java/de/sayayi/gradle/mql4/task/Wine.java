@@ -25,7 +25,6 @@ import java.util.regex.Pattern;
 import org.gradle.api.Project;
 
 import lombok.Getter;
-import lombok.Setter;
 import lombok.ToString;
 
 
@@ -37,8 +36,7 @@ public class Wine
 {
   private static final Pattern DOS_DRIVE = Pattern.compile("[a-z]\\x3a");
 
-  @Setter
-  private Project project;
+  private final Project project;
 
 
   /**
@@ -65,6 +63,11 @@ public class Wine
    */
   @Getter
   private boolean enabled;
+
+
+  public Wine(Project project) {
+    this.project = project;
+  }
 
 
   public void setExecutable(String executable) {

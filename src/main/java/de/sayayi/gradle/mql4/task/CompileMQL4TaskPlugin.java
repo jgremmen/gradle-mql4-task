@@ -25,9 +25,10 @@ import java.nio.charset.StandardCharsets;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.dsl.RepositoryHandler;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.TaskContainer;
-import org.gradle.api.tasks.TaskProvider;
 import org.gradle.internal.os.OperatingSystem;
 
 
@@ -36,8 +37,10 @@ import org.gradle.internal.os.OperatingSystem;
  */
 public class CompileMQL4TaskPlugin implements Plugin<Project>
 {
-  static final String MQL4_EXTENSION = "mql4";
-  static final String COMPILE_MQl4_TASK = "compileMql4";
+  static final String MQL4_EXTENSION_NAME = "mql4";
+  static final String MQL4_CONFIGURATION_NAME = "mql4-metaeditor";
+  static final String COMPILE_MQl4_TASK_NAME = "compileMql4";
+  static final String EXTRACT_METAEDITOR_TASK_NAME = "extractMetaeditor";
 
 
   @Override
@@ -46,32 +49,49 @@ public class CompileMQL4TaskPlugin implements Plugin<Project>
     project.getPlugins().apply("base");
 
     // create mql4 extension
-    final CompileMQL4Extension mql4 = project.getExtensions().create(MQL4_EXTENSION, CompileMQL4Extension.class);
-    mql4.getWine().setProject(project);
+    final Configuration mql4Configuration = createMql4Configuration(project);
+    final CompileMQL4Extension mql4 = project.getExtensions()
+        .create(MQL4_EXTENSION_NAME, CompileMQL4Extension.class, project, mql4Configuration);
 
     // auto configure wine on non-windows architectures
     if (!OperatingSystem.current().isWindows())
       autoConfigureWine(mql4, project);
 
-    // create compileMql4 task
-    final TaskProvider<CompileMQL4Task> compileMql4Task =
-        project.getTasks().register(COMPILE_MQl4_TASK, CompileMQL4Task.class, task -> {
+    // create task
+    final TaskContainer tasks = project.getTasks();
+    final CompileMQL4Task compileMql4Task = createCompileMql4Task(tasks, mql4);
+
+    // assemble.dependsOn('compileMql4')
+    tasks.findByName(ASSEMBLE_TASK_NAME).dependsOn(compileMql4Task);
+
+    // clean.doLast { ... }
+    tasks.findByName(CLEAN_TASK_NAME).doLast(task -> {
+        compileMql4Task.getEx4Files().forEach(File::delete);
+    });
+  }
+
+
+  private CompileMQL4Task createCompileMql4Task(TaskContainer tasks, CompileMQL4Extension mql4)
+  {
+    return tasks.create(COMPILE_MQl4_TASK_NAME, CompileMQL4Task.class, task -> {
           task.setDescription("Compiles MQL4 indicator, expert advisor and script files.");
           task.setGroup(BUILD_GROUP);
           task.setExtension(mql4);
         });
+  }
 
-    project.afterEvaluate(prj -> {
-      final TaskContainer tasks = prj.getTasks();
 
-      // assemble.dependsOn('compileMql4')
-      tasks.findByName(ASSEMBLE_TASK_NAME).dependsOn(compileMql4Task.get());
+  private Configuration createMql4Configuration(Project project)
+  {
+    final RepositoryHandler repositories = project.getRepositories();
+    repositories.add(repositories.maven(r -> r.setUrl("http://maven.sayayi.de/repository/maven-releases/")));
 
-      // clean.doLast { }
-      tasks.findByName(CLEAN_TASK_NAME).doLast(task -> {
-          compileMql4Task.get().getEx4Files().forEach(File::delete);
-      });
-    });
+    final Configuration mql4Configuration = project.getConfigurations()
+        .create(MQL4_CONFIGURATION_NAME)
+        .setVisible(false)
+        .setDescription("Metaeditor library to be used for this project.");
+
+    return mql4Configuration;
   }
 
 

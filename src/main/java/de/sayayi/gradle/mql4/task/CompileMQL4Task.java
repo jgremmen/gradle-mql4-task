@@ -39,11 +39,14 @@ import javax.inject.Inject;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
+import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.DependencySet;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
-import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.OutputFiles;
 import org.gradle.api.tasks.SkipWhenEmpty;
 import org.gradle.api.tasks.TaskAction;
@@ -72,7 +75,7 @@ public class CompileMQL4Task extends DefaultTask
   }
 
 
-  @Input
+  @Internal
   public String getMetaeditor() {
     return extension.getMetaeditor();
   }
@@ -104,6 +107,8 @@ public class CompileMQL4Task extends DefaultTask
   @TaskAction
   public void compileMQL4(IncrementalTaskInputs inputs) throws IOException
   {
+    resolveMetaeditor();
+
     final File mql4dir = extension.getMql4Dir();
     if (!mql4dir.isDirectory())
       throw new GradleException(mql4dir.getAbsolutePath() + " is not a directory");
@@ -138,7 +143,6 @@ public class CompileMQL4Task extends DefaultTask
 
       tmpBatch = File.createTempFile("mql4c-", ".cmd", mql4dir);
       tmpBatch.deleteOnExit();
-
       logger.debug("created temporary batch file {}", tmpBatch);
     }
 
@@ -333,5 +337,36 @@ public class CompileMQL4Task extends DefaultTask
 
   protected File replaceExtension(File f, String ext) {
     return new File(f.getParent(), replaceExtension(f.getName(), ext));
+  }
+
+
+  protected void resolveMetaeditor()
+  {
+    final Project project = getProject();
+    final File buildDir = project.getBuildDir();
+    final Configuration configuration = extension.getMql4Configuration();
+    final DependencySet configurationDependencies = configuration.getDependencies();
+
+    if (configurationDependencies.isEmpty())
+    {
+      // no dependencies but metaeditor is set -> custom metaeditor provided; nothing to do.
+      if (extension.getMetaeditor() != null)
+        return;
+
+      configurationDependencies.add(project.getDependencies().create("de.sayayi:metaeditor:5.+@jar"));
+    }
+
+    final File metaeditorExe = new File(buildDir, "metaeditor.exe");
+    extension.setMetaeditor(metaeditorExe.getAbsolutePath());
+
+    if (!metaeditorExe.exists())
+    {
+      project.getLogger().debug("extracting metaeditor.exe to {}", metaeditorExe);
+      project.copy(copy -> {
+        copy.from(project.zipTree(configuration.getSingleFile()));
+        copy.include("metaeditor.exe");
+        copy.into(buildDir);
+      });
+    }
   }
 }
