@@ -74,7 +74,7 @@ public class CompileMQL4Extension
     if (metaeditor != null && DOS_EXECUTABLE.matcher(metaeditor).matches())
       this.metaeditor = metaeditor;
     else
-      throw new GradleException("not a windows batch/executable");
+      throw new GradleException("mql4.metaeditor is not a windows batch/executable");
   }
 
 
