@@ -50,7 +50,7 @@ pluginBundle {
 
   plugins {
     mql4Plugin {
-      displayName = 'Gradle MQL4 Plugin - compiles MQ4 indicator, expert advisor and script files.'
+      displayName = 'Gradle MQL4 Plugin - compile MQ4 indicator, expert advisor and script files.'
     }
   }
 }
@@ -168,7 +168,6 @@ mql4 {
 
   wine {
     executable = "wine64"
-    systemWideDrive = "w:"
     enabled = false
   }
 }

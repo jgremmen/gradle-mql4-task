@@ -20,11 +20,12 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Pattern;
 
-import org.gradle.api.GradleException;
-import org.gradle.internal.os.OperatingSystem;
+import org.gradle.api.Project;
 
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 
 
@@ -34,6 +35,12 @@ import lombok.ToString;
 @ToString
 public class Wine
 {
+  private static final Pattern DOS_DRIVE = Pattern.compile("[a-z]\\x3a");
+
+  @Setter
+  private Project project;
+
+
   /**
    * wine executable path. The default is {@code wine} without a path reference.
    */
@@ -59,21 +66,6 @@ public class Wine
   @Getter
   private boolean enabled;
 
-  @Getter
-  private String systemWideDrive = "z:";
-
-
-  public Wine()
-  {
-    // enable wine on non-windows architectures
-    enabled = !OperatingSystem.current().isWindows();
-
-    // if WINEPREFIX is set in environment, copy it into the configuration
-    final String winePrefix = System.getProperty("WINEPREFIX");
-    if (winePrefix != null && new File(winePrefix).isDirectory())
-      setPrefix(winePrefix);
-  }
-
 
   public void setExecutable(String executable) {
     this.executable = executable;
@@ -85,40 +77,43 @@ public class Wine
   }
 
 
-  public void setPrefix(File prefix) {
-    this.prefix = prefix;
-  }
-
-
-  public void setPrefix(String prefix)
+  public void setPrefix(File prefix)
   {
-    this.prefix = new File(prefix);
+    final File dosdevices = new File(prefix, "dosdevices");
 
-    final File dosdevices = new File(this.prefix, "dosdevices");
-
-    if (dosdevices.isDirectory())
+    if (!dosdevices.isDirectory())
+      this.prefix = prefix;
+    else
     {
       // find all drives
       final File[] drives = dosdevices.listFiles((FileFilter) file -> {
         final String name = file.getName();
-        return name.length() == 2 && name.charAt(1) == ':' && Files.isSymbolicLink(file.toPath());
+        return DOS_DRIVE.matcher(name).matches() && Files.isSymbolicLink(file.toPath());
       });
 
-      for(final File drive: drives)
-      {
-        try {
-          final Path link = Files.readSymbolicLink(drive.toPath());
-          if ("/".equals(link.toFile().getAbsolutePath()))
-          {
-            // root symlink
-            systemWideDrive = drive.getName();
-            break;
+      findSystemWideDrive: {
+        for(final File drive: drives)
+        {
+          try {
+            final Path link = Files.readSymbolicLink(drive.toPath());
+            if ("/".equals(link.toFile().getAbsolutePath()))
+            {
+              this.prefix = prefix;
+              break findSystemWideDrive;
+            }
+          } catch(final IOException ex) {
+            // ignore
           }
-        } catch(final IOException ex) {
-          // ignore
         }
+
+        project.getLogger().warn("wine prefix {} does not contain a system wide drive!");
       }
     }
+  }
+
+
+  public void setPrefix(String prefix) {
+    setPrefix(new File(prefix));
   }
 
 
@@ -129,14 +124,5 @@ public class Wine
 
   public void setEnabled(String enabled) {
     this.enabled = Boolean.parseBoolean(enabled);
-  }
-
-
-  public void setSystemWideDrive(String systemWideDrive)
-  {
-    if (!systemWideDrive.matches("[a-zA-Z]\\x3a"))
-      throw new GradleException("system wide drive must be a windows drive specification (eg. d:)");
-
-    this.systemWideDrive = systemWideDrive.toLowerCase();
   }
 }
