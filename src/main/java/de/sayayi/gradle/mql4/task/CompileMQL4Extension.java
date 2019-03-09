@@ -20,11 +20,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.gradle.api.Action;
+import org.gradle.api.GradleException;
 
 import lombok.Getter;
-import lombok.Setter;
 import lombok.ToString;
 
 
@@ -36,7 +37,10 @@ import lombok.ToString;
 @ToString
 public class CompileMQL4Extension
 {
-  @Getter @Setter
+  private static final Pattern DOS_EXECUTABLE = Pattern.compile("^.*\\x2e(exe|bat|cmd)$", Pattern.CASE_INSENSITIVE);
+
+
+  @Getter
   private String metaeditor;
 
   @Getter
@@ -54,6 +58,24 @@ public class CompileMQL4Extension
 
   @Getter
   private boolean verbose;
+
+
+  public CompileMQL4Extension()
+  {
+    // if metaeditor is set in the system properties, copy the location from there.
+    final String metaeditor = System.getProperty("mql4.metaeditor");
+    if (metaeditor != null && DOS_EXECUTABLE.matcher(metaeditor).matches())
+      this.metaeditor = metaeditor;
+  }
+
+
+  public void setMetaeditor(String metaeditor)
+  {
+    if (metaeditor != null && DOS_EXECUTABLE.matcher(metaeditor).matches())
+      this.metaeditor = metaeditor;
+    else
+      throw new GradleException("not a windows batch/executable");
+  }
 
 
   public void setMql4Dir(String mql4Dir) {
