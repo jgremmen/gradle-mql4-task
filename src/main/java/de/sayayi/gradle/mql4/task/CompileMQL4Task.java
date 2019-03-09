@@ -15,14 +15,16 @@
  */
 package de.sayayi.gradle.mql4.task;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_16LE;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.util.Arrays;
@@ -214,7 +216,7 @@ public class CompileMQL4Task extends DefaultTask
       createBatchfile(mql4FileEntry.getKey(), tmpBatch);
 
       execAction.setExecutable(wine.getExecutable());
-      execAction.setArgs(Arrays.asList("cmd", "/c", tmpBatch));
+      execAction.setArgs(Arrays.asList("cmd", "/c", tmpBatch.getAbsolutePath()));
 
       configureWineEnvironment(execAction);
     }
@@ -227,7 +229,9 @@ public class CompileMQL4Task extends DefaultTask
 
     execAction.setWorkingDir(extension.getMql4Dir());
 
-    // metaeditor.exe returns the number of compiled files... we expect 1 (would be treated as an error by gradle)
+    // windows: metaeditor.exe returns the number of compiled files... we expect 1
+    // non-windows: wine will return a code which has no relation to whether compilation has succeeded/failed
+    // -> ignore return code as it is useless
     execAction.setIgnoreExitValue(true);
 
     final ExecResult result = execAction.execute();
@@ -248,10 +252,7 @@ public class CompileMQL4Task extends DefaultTask
       }
 
       if (logFile.exists())
-      {
-        getLogger().log(extension.isVerbose() ? LogLevel.QUIET : LogLevel.DEBUG, "{}",
-            readLogfile(logFile));
-      }
+        getLogger().log(extension.isVerbose() ? LogLevel.QUIET : LogLevel.DEBUG, "{}", readLogfile(logFile));
     } finally {
       logFile.delete();
     }
@@ -281,7 +282,7 @@ public class CompileMQL4Task extends DefaultTask
 
   protected void createBatchfile(String relativeMq4Path, File batchFile) throws IOException
   {
-    try(Writer batchWriter = new FileWriter(batchFile)) {
+    try(Writer batchWriter = new OutputStreamWriter(new FileOutputStream(batchFile), ISO_8859_1)) {
       batchWriter.append("@ECHO OFF\r\n")
                  .append('"').append(extension.getMetaeditor()).append("\" ")
                  .append("/compile:\"").append(relativeMq4Path.replace("/", "\\")).append("\" ")
