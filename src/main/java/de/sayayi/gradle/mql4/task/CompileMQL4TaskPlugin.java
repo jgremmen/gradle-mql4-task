@@ -104,10 +104,10 @@ public class CompileMQL4TaskPlugin implements Plugin<Project>
     wine.setPrefix(new File(project.getBuildDir(), ".wine"));
 
     // try to find the most likely wine prefix
-    File wineprefix = getSystemPropertyAsFile("WINEPREFIX");
+    File wineprefix = getEnvironmentVariableAsFile("WINEPREFIX");
     if (wineprefix == null)
     {
-      final File _home = getSystemPropertyAsFile("HOME");
+      final File _home = getEnvironmentVariableAsFile("HOME");
       if (_home != null && _home.isDirectory())
         wineprefix = new File(_home, ".wine");
     }
@@ -117,7 +117,6 @@ public class CompileMQL4TaskPlugin implements Plugin<Project>
       if (!wineprefix.isDirectory())
       {
         // environment does not exist yet; it will be created on 1st invocation of wine
-        logger.debug("expect wine environment in {}", wineprefix);
         wine.setPrefix(wineprefix);
       }
       else
@@ -141,15 +140,18 @@ public class CompileMQL4TaskPlugin implements Plugin<Project>
         if (win32)
           wine.setPrefix(wineprefix);
         else
-          logger.debug("use default wine environment: {}", wine.getPrefix());
+          logger.debug("wine environment {} has no 32-bit windows architecture", wineprefix);
       }
     }
+
+    logger.debug("use wine environment {}", wine.getPrefix());
+
   }
 
 
-  protected File getSystemPropertyAsFile(String property)
+  protected File getEnvironmentVariableAsFile(String property)
   {
-    final String value = System.getProperty(property);
+    final String value = System.getenv(property);
     return (value != null && !value.isEmpty()) ? new File(value) : null;
   }
 }
