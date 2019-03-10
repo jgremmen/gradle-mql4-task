@@ -268,18 +268,14 @@ public class CompileMQL4Task extends DefaultTask
     final Map<String,Object> environment = execAction.getEnvironment();
 
     // disable debugging messages on the console
-    environment.put("WINEDEBUG", "-all");
+    environment.put("WINEDEBUG", "fixme-all");
 
     // set custom wine prefix
     final File winePrefix = extension.getWine().getPrefix();
     if (winePrefix != null)
     {
       environment.put("WINEPREFIX", winePrefix.getAbsolutePath());
-
-      // if the wine prefix is not a directory it will be created the first time wine is started.
-      // make sure wine configures itself as a 32-bit windows architecture
-      if (!winePrefix.isDirectory())
-        environment.put("WINEARCH", "win32");
+      environment.put("WINEARCH", "win32");
     }
   }
 
