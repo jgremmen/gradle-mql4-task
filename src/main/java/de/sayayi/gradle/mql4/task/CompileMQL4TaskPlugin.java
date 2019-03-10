@@ -28,6 +28,7 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
 import org.gradle.api.logging.Logger;
+import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.internal.os.OperatingSystem;
 
@@ -37,10 +38,11 @@ import org.gradle.internal.os.OperatingSystem;
  */
 public class CompileMQL4TaskPlugin implements Plugin<Project>
 {
+  private static final Logger logger = Logging.getLogger(CompileMQL4TaskPlugin.class);
+
   static final String MQL4_EXTENSION_NAME = "mql4";
   static final String MQL4_CONFIGURATION_NAME = "mql4-metaeditor";
   static final String COMPILE_MQl4_TASK_NAME = "compileMql4";
-  static final String EXTRACT_METAEDITOR_TASK_NAME = "extractMetaeditor";
 
 
   @Override
@@ -98,7 +100,6 @@ public class CompileMQL4TaskPlugin implements Plugin<Project>
   protected void autoConfigureWine(CompileMQL4Extension mql4, Project project)
   {
     final Wine wine = mql4.getWine();
-    final Logger logger = project.getLogger();
 
     wine.setEnabled(true);
     wine.setPrefix(new File(project.getBuildDir(), ".wine"));
@@ -145,7 +146,6 @@ public class CompileMQL4TaskPlugin implements Plugin<Project>
     }
 
     logger.debug("use wine environment {}", wine.getPrefix());
-
   }
 
 
