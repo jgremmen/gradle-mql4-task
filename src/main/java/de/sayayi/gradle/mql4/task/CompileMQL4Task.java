@@ -107,6 +107,7 @@ public class CompileMQL4Task extends DefaultTask
   @TaskAction
   public void compileMQL4(IncrementalTaskInputs inputs) throws IOException
   {
+    createWinePrefixParentDirectory();
     resolveMetaeditor();
 
     final File mql4dir = extension.getMql4Dir();
@@ -268,7 +269,7 @@ public class CompileMQL4Task extends DefaultTask
     final Map<String,Object> environment = execAction.getEnvironment();
 
     // disable debugging messages on the console
-    environment.put("WINEDEBUG", "fixme-all");
+    environment.put("WINEDEBUG", "-all");
 
     // set custom wine prefix
     final File winePrefix = extension.getWine().getPrefix();
@@ -333,6 +334,20 @@ public class CompileMQL4Task extends DefaultTask
 
   protected File replaceExtension(File f, String ext) {
     return new File(f.getParent(), replaceExtension(f.getName(), ext));
+  }
+
+
+  protected void createWinePrefixParentDirectory()
+  {
+    final Wine wine = extension.getWine();
+
+    if (wine.isEnabled())
+    {
+      final File wineprefixParent = wine.getPrefix().getParentFile();
+
+      if (!wineprefixParent.isDirectory())
+        wineprefixParent.mkdirs();
+    }
   }
 
 
